@@ -1,0 +1,23 @@
+Package: makeovr
+Title: A Make-like DSL for R
+Version: 0.1
+Authors@R:
+    person("Aviral", "Goel", , "goel.aviral@gmail.com", role = c("aut", "cre"),
+           comment = c(ORCID = "YOUR-ORCID-ID"))
+Description: Implements abstractions similar to Make with some other useful functionality.
+License: MIT + file LICENSE
+Imports:
+    bench,
+    fs,
+    fst,
+    purrr,
+    readr,
+    stringr,
+    withr,
+    shiny,
+    visNetwork,
+    magrittr,
+    optparse
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.2.0

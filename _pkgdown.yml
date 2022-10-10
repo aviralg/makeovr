@@ -1,0 +1,36 @@
+
+url: ~
+template:
+  bootstrap: 5
+  bootswatch: simplex
+
+reference:
+- title:
+  contents:
+  - rule
+  - rule_name
+  - rule_desc
+  - rule_target
+  - rule_action
+  - rule_deps
+  - rule_dep
+  - rule_hist
+  - rule_path
+  - rule_read
+  - rule_write
+  - rule_log
+  - rule_warn
+  - rule_msg
+  - rule_dbg
+  - rule_err
+  - rule_run
+  - rule_cmd
+  - rule_web
+  - ext_set
+  - ext_writer
+  - ext_reader
+  - ext_read
+  - ext_write
+
+development:
+  mode: auto
