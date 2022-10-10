@@ -143,6 +143,9 @@ rule_cmd <- function(rule,
         rule_help(rules)
     } else if (!is.null(params$port)) {
         rule_web(rule, as.integer(params$port))
+    } else if (length(names) == 0) {
+        cat("No rule supplied for running!\n\n")
+        rule_help(rules)
     } else {
         rule_run_all(rules, params, names)
     }
