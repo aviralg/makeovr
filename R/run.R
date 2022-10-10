@@ -22,11 +22,11 @@ rule_run_helper <- function(rule, params) {
                  error <<- e
              })
 
-    if(!is.null(error)) {
+    if (!is.null(error)) {
         list(time = time, error = error)
     }
 
-    if(done) {
+    if (done) {
         return(NULL)
     }
 
@@ -49,7 +49,7 @@ rule_run_helper <- function(rule, params) {
 #' @importFrom fs dir_create path
 initialize <- function(rule, store, version) {
 
-    if(is_chr(store)) {
+    if (is_chr(store)) {
         name <- rule_name(rule)
 
         data_dir <- path(store, name)
@@ -85,7 +85,7 @@ rule_run <- function(rule, params) {
 
     ## if we don't ignore deps, then do topo sort and run,
     ## otherwise, just run the rule
-    rules <- if(params$ignore_deps) list(rule) else rule_sort(rule)
+    rules <- if (params$ignore_deps) list(rule) else rule_sort(rule)
 
     store <- params$store
     version <- params$version
@@ -94,30 +94,30 @@ rule_run <- function(rule, params) {
 
     res <- NULL
 
-    for(r in rules) {
+    for (r in rules) {
         ## make sure that wd is reset even if error happens
         res <- with_dir(getwd(), rule_run_helper(r, params))
 
         ## is res is null, it means rule was not required to be executed
-        if(is.null(res)) {
+        if (is.null(res)) {
             next
         }
 
-        if(!is.null(res$time) && is_chr(store)) {
+        if (!is.null(res$time) && is_chr(store)) {
             hist_write(r,
                        version,
                        time = res$time,
                        log = rule_logs_df(r))
         }
 
-        if(!is.null(res$error)) {
+        if (!is.null(res$error)) {
             break
         }
     }
 
     walk(rules, deinitialize)
 
-    if(!is.null(res$error)) {
+    if (!is.null(res$error)) {
         stop(res$error)
     }
 
@@ -127,14 +127,13 @@ rule_run <- function(rule, params) {
 #' @importFrom purrr detect
 rule_run_all <- function(rules, params, names) {
 
-    for(name in names) {
+    for (name in names) {
 
         r <- detect(rules, function(r) rule_name(r) == name)
 
-        if(is.null(r)) {
+        if (is.null(r)) {
             stop(sprintf("invalid rule name '%s'", name))
-        }
-        else {
+        } else {
             rule_run(r, params)
         }
     }

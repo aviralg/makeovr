@@ -14,8 +14,6 @@ print.rule <- function(x, ...) {
 ## }
 
 rule_to_expr <- function(rule) {
-
-
     name <- rule_name(rule)
     desc <- rule_desc(rule)
     target <- rule_target(rule)
@@ -28,7 +26,7 @@ rule_to_expr <- function(rule) {
 
     deps <- rule_deps(rule)
 
-    for(d in deps) {
+    for (d in deps) {
         name <- rule_name(d)
         expr[[length(expr) + 1]] <- as.name(name)
     }

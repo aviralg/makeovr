@@ -1,18 +1,20 @@
-INVALID_FILENAME_CHARACTERS <- c("/", "\\", "?", "%", "*", ":", "|", "\"", "<", ">", ".", ",", ";", "=", " ")
+.invalid_chrs <- c("/", "\\", "?", "%", "*", ":", "|",
+                   "\"", "<", ">", ".", ",", ";", "=", " ")
 
 #' @importFrom stringr str_detect fixed
-#' @importFrom purrr map_lgl
+#' @importFrom purrr keep
 validate_name <- function(name) {
-    if (any(map_lgl(INVALID_FILENAME_CHARACTERS, function(c) str_detect(name, fixed(c))))) {
-        msg <- sprintf("name '%s' should not have the following characters: ",
-                       name,
-                       paste(INVALID_FILENAME_CHARACTERS, collapse = " "))
+    chrs <- keep(.invalid_chrs,
+                 function(c) str_detect(name, fixed(c)))
+    if (length(chrs) > 0) {
+        chrs <- paste(chrs, collapse = ",")
+        msg <- sprintf("rule name '%s' cannot contain %s", name, chrs)
         stop(msg)
     }
 }
 
 expr_to_chr <- function(val, collapse = "\n") {
-    if(missing(val)) ""
+    if (missing(val)) ""
     else paste(deparse(val), collapse = collapse)
 }
 
@@ -31,10 +33,12 @@ pad_max <- function(chrs, side = "right") {
     str_pad(chrs, max(nchar(chrs)), side = side)
 }
 
-MISSING <- new.env(parent = emptyenv())
+.missing_val <- new.env(parent = emptyenv())
+
+missing_val <- function() .missing_val
 
 is_missing <- function(val) {
-    identical(val, MISSING)
+    identical(val, .missing_val)
 }
 
 is_chr <- function(val, size = 1, na = FALSE) {

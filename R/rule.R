@@ -15,7 +15,8 @@ get_id <- function() {
 #' @param ...    Rule dependencies.
 #'
 #' @examples
-#' rule("slicer", "Slice a df", function(self) FALSE, function(self, df, len = 10) df[1:len, ])
+#' rule("slicer", "Slice a df", function(self) FALSE,
+#'      function(self, df, len = 10) df[1:len, ])
 #'
 #' @export
 #' @importFrom purrr map_chr
@@ -117,7 +118,7 @@ rule_dir_set <- function(rule, data_dir, hist_dir) {
 
 rule_data_dir <- function(rule) {
     dir <- rule$data_dir
-    if(is.null(dir)) {
+    if (is.null(dir)) {
         name <- rule_name(rule)
         stop(sprintf("no data directory associated with rule %s", name))
     }
@@ -126,7 +127,7 @@ rule_data_dir <- function(rule) {
 
 rule_hist_dir <- function(rule) {
     dir <- rule$hist_dir
-    if(is.null(dir)) {
+    if (is.null(dir)) {
         name <- rule_name(rule)
         stop(sprintf("no history directory associated with rule %s", name))
     }
@@ -157,7 +158,7 @@ rule_logs_add <- function(rule, type, time, msg) {
     ind <- logs$ind
     cap <- logs$cap
 
-    if(ind > cap) {
+    if (ind > cap) {
         logs$types <- c(logs$types, character(cap))
         logs$times <- c(logs$times, character(cap))
         logs$msgs <- c(logs$msgs, character(cap))
@@ -193,22 +194,22 @@ rule_sort <- function(rule) {
     visit <- function(r) {
         name <- rule_name(r)
 
-        if(name %in% perm_mark) {
+        if (name %in% perm_mark) {
             return(NULL)
         }
 
-        if(name %in% temp_mark) {
+        if (name %in% temp_mark) {
             stop(sprintf("rules should not have a cycle"))
         }
 
         temp_mark <<- c(temp_mark, name)
 
-        for(d in rule_deps(r)) {
+        for (d in rule_deps(r)) {
             visit(d)
         }
 
-        temp_mark <<- temp_mark[1:length(temp_mark) - 1]
-
+        ## https://stackoverflow.com/a/12114464
+        temp_mark <<- temp_mark[-length(temp_mark)]
         perm_mark <<- c(perm_mark, name)
 
         order <<- c(order, list(r))

@@ -2,7 +2,7 @@
 #' @importFrom fs path
 hist_file <- function(rule, version) {
     hist_dir <- rule_hist_dir(rule)
-    hist_file <- path(hist_dir, version, ext = "rds")
+    path(hist_dir, version, ext = "rds")
 }
 
 hist_write <- function(rule, version, ...) {
@@ -52,9 +52,6 @@ hist_tbl <- function(rule) {
 #' @importFrom purrr map
 #' @importFrom fs path_file path_ext_remove
 rule_hist <- function(rule, version = NULL) {
-    hist_dir <- rule_hist_dir(rule)
-    name <- rule_name(rule)
-
     versions <- normalize_versions(rule, version)
 
     res <- map(versions, function(version) hist_read(rule, version))
@@ -64,27 +61,32 @@ rule_hist <- function(rule, version = NULL) {
 
 normalize_version_helper <- function(version, len) {
 
-    if(is.double(version)) {
+    if (is.double(version)) {
 
         ver <- as.integer(version)
 
-        if(ver != version) {
-            stop(sprintf("history version '%d' should be integer or a whole number", version))
+        if (ver != version) {
+            msg <- sprintf("version '%d' should be integer or a whole number",
+                           version)
+            stop(msg)
         }
 
         version <- ver
     }
 
-    if(version == 0) {
+    if (version == 0) {
         stop(sprintf("history version index cannot be 0"))
     }
 
-    if(version < 0) {
+    if (version < 0) {
         version <- as.integer(len + version + 1)
     }
 
-    if(version > len) {
-        stop(sprintf("cannot access history index %d from %d histories", version, len))
+    if (version > len) {
+        msg <- sprintf("cannot access history index %d from %d histories",
+                       version,
+                       len)
+        stop(msg)
     }
 
     version
@@ -92,14 +94,12 @@ normalize_version_helper <- function(version, len) {
 
 #' @importFrom purrr map_int
 normalize_versions <- function(rule, version = NULL) {
-    if(is.character(version)) {
+    if (is.character(version)) {
         version
-    }
-
-    else if(is.numeric(version) || is.null(version)) {
+    } else if (is.numeric(version) || is.null(version)) {
         tbl <- hist_tbl(rule)
 
-        if(!is.null(version)) {
+        if (!is.null(version)) {
             n <- nrow(tbl)
             version <- map_int(version, normalize_version_helper, n)
 

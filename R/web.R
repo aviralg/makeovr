@@ -4,16 +4,20 @@ rule_to_node <- function(rule) {
     name <- rule_name(rule)
     desc <- rule_desc(rule)
 
-    desc <- if(typeof(desc) == "character") {
+    desc <- if (typeof(desc) == "character") {
                 paste(desc, collapse = "\n")
-            }
-            else {
+            } else {
                 paste(desc[[1]], collapse = "\n")
             }
 
-    tooltip <- paste0("<p><b>", name,"</b><br>", desc, "</p>")
+    tooltip <- paste0("<p><b>", name, "</b><br>", desc, "</p>")
 
-    data.frame(id = id, label = name, title = tooltip, shape = "circle", value = 40, size = 50)
+    data.frame(id = id,
+               label = name,
+               title = tooltip,
+               shape = "circle",
+               value = 40,
+               size = 50)
 }
 
 rule_to_edge <- function(rule) {
@@ -31,13 +35,13 @@ rule_to_edge <- function(rule) {
 rule_book <- function(rule, book = new.env(parent = emptyenv())) {
     name <- rule_name(rule)
 
-    if(exists(name, book)) {
+    if (exists(name, book)) {
         stop(sprintf("duplicate rule name '%s'", name))
     }
 
     book[[name]] <- rule
 
-    for(d in rule_deps(rule)) {
+    for (d in rule_deps(rule)) {
         rule_book(d, book)
     }
 

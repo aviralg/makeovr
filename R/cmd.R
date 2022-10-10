@@ -1,4 +1,4 @@
-GLOBAL_OPTIONS <- list(
+.global_options <- list(
     make_option(c("--help", "-h"),
                 action = "store_true",
                 default = FALSE,
@@ -17,7 +17,7 @@ GLOBAL_OPTIONS <- list(
     make_option("--dry-run",
                 action = "store_true",
                 default = FALSE,
-                help = "Print execution sequence without actually running the rules."),
+                help = "Print execution sequence without running the rules."),
 
     make_option("--port",
                 action = "store",
@@ -66,7 +66,7 @@ rule_options <- function(rules) {
                     action  = "store")
     }
 
-    c(GLOBAL_OPTIONS, map(pars, par_to_option))
+    c(.global_options, map(pars, par_to_option))
 }
 
 default_arg_parser <- function(arg) {
@@ -78,21 +78,21 @@ default_arg_parser <- function(arg) {
             parsed <<- arg
         })
 
-    if(is.symbol(parsed)) as.character(parsed) else eval(parsed)
+    if (is.symbol(parsed)) as.character(parsed) else eval(parsed)
 }
 
 parse_options <- function(options, arg_parser) {
 
-    if(is.null(arg_parser)) {
+    if (is.null(arg_parser)) {
         arg_parser <- default_arg_parser
     }
 
-    glob_opts <- unlist(map(GLOBAL_OPTIONS,
+    glob_opts <- unlist(map(.global_options,
                             function(opt) c(opt@short_flag, opt@long_flag)))
 
     rule_opts <- setdiff(names(options), glob_opts)
 
-    for(name in rule_opts) {
+    for (name in rule_opts) {
         options[[name]] <- arg_parser(options[[name]])
     }
 
@@ -136,17 +136,14 @@ rule_cmd <- function(rule,
         error <<- e$message
     })
 
-    if(!is.null(error)) {
-        cat(error,"\n")
+    if (!is.null(error)) {
+        cat(error, "\n")
         rule_help(rules)
-    }
-    else if(params$help) {
+    } else if (params$help) {
         rule_help(rules)
-    }
-    else if(!is.null(params$port)) {
+    } else if (!is.null(params$port)) {
         rule_web(rule, as.integer(params$port))
-    }
-    else {
+    } else {
         rule_run_all(rules, params, names)
     }
 
