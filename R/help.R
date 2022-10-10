@@ -1,27 +1,14 @@
 
-par_dflt <- function(par_name, target_pars, action_pars) {
+par_dflt <- function(par_name, pars) {
 
-    helper <- function(name, pars) {
-        dflt <- missing_val()
+    dflt <- ""
 
-        if (name %in% names(pars)) {
-            dflt <- pars[[name]]
-            dflt <- expr_to_chr(dflt)
-            dflt <- if (dflt == "") missing_val() else dflt
-        }
-
-        dflt
+    if (par_name %in% names(pars)) {
+        dflt <- pars[[par_name]]
+        dflt <- expr_to_chr(dflt)
     }
 
-    target_dflt <- helper(par_name, target_pars)
-    action_dflt <- helper(par_name, action_pars)
-
-    res <- if (is_missing(target_dflt) && is_missing(action_dflt)) ""
-           else if (is_missing(target_dflt)) action_dflt
-           else if (is_missing(action_dflt)) target_dflt
-           else paste(target_dflt, "/", action_dflt, sep = "")
-
-    res
+    dflt
 }
 
 #' @importFrom stringr str_ends fixed
@@ -43,20 +30,6 @@ par_name <- function(name) {
     }
 }
 
-#' @importFrom purrr map2_chr
-par_tbl <- function(names, dflts, descs) {
-    par_dflt <- map2_chr(names,
-                         dflts,
-                         function(name, dflt) {
-                             if (dflt == "") name
-                             else sprintf("%s=%s", name, dflt)
-                         })
-
-    res <- data.frame(par_dflt = par_dflt,
-                      desc = descs)
-    res
-}
-
 #' @importFrom purrr map_chr
 rule_par_tbl <- function(rule) {
 
@@ -67,11 +40,16 @@ rule_par_tbl <- function(rule) {
     par_names <- c(names(target_pars), names(action_pars))
     par_names <- setdiff(unique(par_names), "self")
 
-    dflts <- map_chr(par_names, par_dflt, target_pars, action_pars)
+    target_dflts <- map_chr(par_names, par_dflt, target_pars)
+    action_dflts <- map_chr(par_names, par_dflt, action_pars)
     descs <- map_chr(par_names, par_desc, desc)
     names <- map_chr(par_names, par_name)
 
-    par_tbl(names, dflts, descs)
+    res <- data.frame(name = names,
+                      target_dflt = target_dflts,
+                      action_dflt = action_dflts,
+                      desc = descs)
+    res
 }
 
 global_par_tbl <- function() {
@@ -89,20 +67,47 @@ global_par_tbl <- function() {
     dflts <- map_chr(.global_options, function(op) expr_to_chr(op@default))
     descs <- map_chr(.global_options, function(op) op@help)
 
-    par_tbl(names, dflts, descs)
+    res <- data.frame(name = names,
+                      target_dflt = dflts,
+                      action_dflt = character(length(names)),
+                      desc = descs)
+    res
 }
 
+#' @importFrom cli col_cyan col_red col_green
+colorize_par <- function(name, target_dflt, action_dflt, desc) {
+    n <- nchar(name)
+    val <- ""
 
-#' @importFrom purrr walk2
+    if (target_dflt != "" && action_dflt == "") {
+        val <- sprintf("=%s", col_cyan(target_dflt))
+        n <- n + 1 + nchar(target_dflt)
+    } else if (target_dflt == "" && action_dflt != "") {
+        val <- sprintf("=%s", col_cyan(action_dflt))
+        n <- n + 1 + nchar(action_dflt)
+    } else if (target_dflt != "" && action_dflt != "") {
+        val <- sprintf("=%s/%s", col_cyan(target_dflt), col_cyan(action_dflt))
+        n <- n + 1 + nchar(target_dflt) + 1 + nchar(action_dflt)
+    }
+
+    name_dflt <- sprintf("%s%s", col_red(name), val)
+
+    desc <- col_green(desc)
+
+    data.frame(name_dflt = name_dflt, desc = desc, n = n)
+}
+
+#' @importFrom purrr pwalk pmap_dfr
 #' @importFrom cli cli_h2 style_bold ansi_strwrap
-#' @importFrom cli col_red col_cyan col_blue col_green
+#' @importFrom cli col_blue col_yellow
+#' @importFrom stringr str_pad
 show_help <- function(name, desc, pars) {
     cat("\n")
 
     cli_h2(col_blue(style_bold("[{name}]")))
 
     if (!is.null(desc)) {
-        desc <- ansi_strwrap(col_green(style_bold(desc)),
+        desc <- ansi_strwrap(col_yellow(style_bold(desc)),
                              indent = 4,
                              exdent = 4,
                              simplify = TRUE)
@@ -111,11 +116,14 @@ show_help <- function(name, desc, pars) {
     }
 
     if (nrow(pars) > 0) {
-        walk2(pad_max(pars$par_dflt),
-              pad_max(pars$desc),
-              function(par_dflt, desc) {
-                  line <- sprintf("%s  %s", col_red(par_dflt), col_cyan(desc))
-                  cat(paste("    ", line, "\n", sep = ""))
+        pars <- pmap_dfr(pars, colorize_par)
+
+        max_n <- max(pars$n)
+
+        pwalk(pars,
+              function(name_dflt, desc, n) {
+                  spaces <- paste(rep.int(" ", 2 + max_n - n), collapse = "")
+                  cat("    ", name_dflt, spaces, desc, "\n", sep = "")
               })
     }
 }
