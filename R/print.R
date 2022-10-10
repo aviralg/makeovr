@@ -1,17 +1,11 @@
 
 #' @export
+#' @importFrom cli cli_code
 print.rule <- function(x, ...) {
-    print(rule_to_expr(x))
+    expr <- rule_to_expr(x)
+    cli_code(format(expr))
     invisible(x)
 }
-
-## #' TODO
-## #' @export
-## #' @importFrom cli cli_code
-## rule_show <- function(rule) {
-##     cli_code(format(rule_to_expr(rule)))
-##     invisible(rule)
-## }
 
 rule_to_expr <- function(rule) {
     name <- rule_name(rule)

@@ -94,21 +94,27 @@ global_par_tbl <- function() {
 
 
 #' @importFrom purrr walk2
+#' @importFrom cli cli_h2 style_bold ansi_strwrap
+#' @importFrom cli col_red col_cyan col_blue col_green
 show_help <- function(name, desc, pars) {
     cat("\n")
-    cat(sprintf("    [%s]", name), "\n")
+
+    cli_h2(col_blue(style_bold("[{name}]")))
 
     if (!is.null(desc)) {
-        cat(paste("    ", desc, collapse = "\n", sep = ""))
+        desc <- ansi_strwrap(col_green(style_bold(desc)),
+                             indent = 4,
+                             exdent = 4,
+                             simplify = TRUE)
+        cat(desc, sep = "\n")
         cat("\n")
     }
 
     if (nrow(pars) > 0) {
-        cat("\n")
         walk2(pad_max(pars$par_dflt),
               pad_max(pars$desc),
               function(par_dflt, desc) {
-                  line <- sprintf("%s  %s", par_dflt, desc)
+                  line <- sprintf("%s  %s", col_red(par_dflt), col_cyan(desc))
                   cat(paste("    ", line, "\n", sep = ""))
               })
     }
