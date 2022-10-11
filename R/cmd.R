@@ -4,6 +4,15 @@
                 default = FALSE,
                 help = "Print this message and exit."),
 
+    make_option("--port",
+                action = "store",
+                help = "Display web interface on the specified port."),
+
+    make_option("--dry-run",
+                action = "store_true",
+                default = FALSE,
+                help = "Print execution sequence without running the rules."),
+
     make_option("--ignore-deps",
                 action = "store_true",
                 default = FALSE,
@@ -13,15 +22,6 @@
                 action = "store_true",
                 default = FALSE,
                 help = "Print various types of debugging information."),
-
-    make_option("--dry-run",
-                action = "store_true",
-                default = FALSE,
-                help = "Print execution sequence without running the rules."),
-
-    make_option("--port",
-                action = "store",
-                help = "Display web interface on the specified port."),
 
     make_option("--store",
                 action = "store",
