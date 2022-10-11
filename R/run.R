@@ -47,7 +47,9 @@ rule_run_helper <- function(rule, params) {
 }
 
 #' @importFrom fs dir_create path
-initialize <- function(rule, store, version) {
+initialize <- function(rule, params) {
+
+    store <- params$store
 
     if (is_chr(store)) {
         name <- rule_name(rule)
@@ -62,12 +64,21 @@ initialize <- function(rule, store, version) {
     }
 
     rule_logs_init(rule)
+
+    debug <- params$debug
+
+    if (typeof(debug) == "logical" && debug == TRUE) {
+        rule$debug <- TRUE
+    } else {
+        rule$debug <- FALSE
+    }
 }
 
 #' @importFrom fs dir_create path
 deinitialize <- function(rule) {
     rule_dir_set(rule, NULL, NULL)
     rule_logs_rem(rule)
+    rule$debug <- FALSE
 }
 
 #' TODO
@@ -90,7 +101,7 @@ rule_run <- function(rule, params) {
     store <- params$store
     version <- params$version
 
-    walk(rules, initialize, store, version)
+    walk(rules, initialize, params)
 
     res <- NULL
 
