@@ -23,6 +23,11 @@
                 default = FALSE,
                 help = "Print various types of debugging information."),
 
+    make_option("--trace",
+                action = "store_true",
+                default = FALSE,
+                help = "Trace rule execution."),
+
     make_option("--store",
                 action = "store",
                 default = NA_character_,
@@ -111,13 +116,13 @@ parse_options <- function(options, arg_parser) {
 #' @param arg_parser Function to parse command-line arguments.
 #'
 #' @importFrom optparse OptionParser parse_args2
-#' @importFrom purrr map
+#' @importFrom purrr map detect
 #' @export
 rule_cmd <- function(rule,
                      args = commandArgs(trailingOnly = TRUE),
                      arg_parser = NULL) {
 
-    rules <- rule_sort(rule)
+    rules <- rule_sort(list(rule))
 
     parser <- OptionParser(option_list = rule_options(rules),
                            add_help_option = FALSE)
@@ -147,7 +152,16 @@ rule_cmd <- function(rule,
         cat("No rule supplied for running!\n\n")
         rule_help(rules)
     } else {
-        rule_run_all(rules, params, names)
+        rules_to_run <-
+            map(names, function(name) {
+                r <- detect(rules, function(r) rule_name(r) == name)
+                if (is.null(r)) {
+                    stop(sprintf("invalid rule name '%s'", name))
+                } else {
+                    r
+                }
+            })
+        rules_run(rules_to_run, params)
     }
 
     invisible(NULL)

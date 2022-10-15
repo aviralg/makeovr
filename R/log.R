@@ -15,6 +15,7 @@
 #' @name log
 rule_log <- function(rule, type, msg) {
     time <- format(Sys.time(), "%Y-%b-%d-%I-%p-%M-%S")
+
     rule_logs_add(rule, type, time, msg)
 
     invisible(NULL)

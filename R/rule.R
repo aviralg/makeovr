@@ -184,7 +184,7 @@ rule_logs_df <- function(rule) {
 }
 
 ## topological sort
-rule_sort <- function(rule) {
+rule_sort <- function(rules) {
     temp_mark <- character(0)
 
     perm_mark <- character(0)
@@ -215,7 +215,9 @@ rule_sort <- function(rule) {
         order <<- c(order, list(r))
     }
 
-    visit(rule)
+    for (rule in rules) {
+        visit(rule)
+    }
 
     order
 }

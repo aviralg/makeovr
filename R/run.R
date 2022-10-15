@@ -1,4 +1,40 @@
 
+#' @importFrom glue glue
+#' @importFrom cli col_br_green cli_inform
+dbg_h1 <- function(trace, msg, .envir = parent.frame()) {
+    if (trace) {
+        dbat <- style_bold("❯")
+        msg <- glue(msg, .envir = .envir)
+        n <- nchar(msg)
+        dashes <- rep.int("─", max(40 - n, 0))
+        dashes <- paste0(dashes, collapse = "")
+        cli_inform(col_br_green("{dbat}──── {msg} {dashes}"))
+    }
+}
+
+#' @importFrom glue glue
+#' @importFrom cli col_br_red cli_inform
+dbg_h2 <- function(trace, msg, .envir = parent.frame()) {
+    if (trace) {
+        dbat <- style_bold("❯❯")
+        msg <- glue(msg, .envir = .envir)
+        n <- nchar(msg)
+        dashes <- rep.int("─", max(40 - n, 0))
+        dashes <- paste0(dashes, collapse = "")
+        cli_inform(col_br_red("{dbat}─── {msg} {dashes}"))
+    }
+}
+
+#' @importFrom glue glue
+#' @importFrom cli col_br_blue cli_inform
+dbg_h3 <- function(trace, msg, .envir = parent.frame()) {
+    if (trace) {
+        dbat <- style_bold("❯❯❯")
+        msg <- glue(msg, .envir = .envir)
+        cli_inform(col_br_blue("{dbat}── {msg}"))
+    }
+}
+
 #' @importFrom bench bench_time
 rule_run_helper <- function(rule, params) {
 
@@ -17,13 +53,22 @@ rule_run_helper <- function(rule, params) {
 
     error <- NULL
 
-    tryCatch(done <- do.call(target, target_args),
-             error = function(e) {
-                 error <<- e
-             })
+    name <- style_bold(rule_name(rule))
+
+    dbg_h2(params$trace, "Begin target {name}")
+
+    tryCatch({
+        done <- do.call(target, target_args)
+        dbg_h3(params$trace, "Target returned {toString(done)}.")
+    }, error = function(e) {
+        error <<- e
+        dbg_h3(params$trace, "Target failed with error: {e$msg}.")
+    })
+
+    dbg_h2(params$trace, "End target {name}")
 
     if (!is.null(error)) {
-        list(time = time, error = error)
+        return(list(time = NULL, error = error))
     }
 
     if (done) {
@@ -36,12 +81,19 @@ rule_run_helper <- function(rule, params) {
 
     action_args <- params[action_pars]
 
+    dbg_h2(params$trace, "Begin action {name}")
+
     time <- bench_time({
-        tryCatch(do.call(action, action_args),
-                 error = function(e) {
-                     error <<- e
-                 })
+        tryCatch({
+            do.call(action, action_args)
+            dbg_h3(params$trace, "Action executed successfully.")
+        }, error = function(e) {
+            error <<- e
+            dbg_h3(params$trace, "Action failed with error: {e$msg}.")
+        })
     })
+
+    dbg_h2(params$trace, "End action {name}")
 
     list(time = time_to_df(time), error = error)
 }
@@ -81,33 +133,47 @@ deinitialize <- function(rule) {
     rule$debug <- FALSE
 }
 
-#' TODO
-#'
-#' @param rule Rule.
-#' @param params Parameters.
-#'
-#' @export
 #' @importFrom fs path
 #' @importFrom withr with_dir
-#' @importFrom purrr walk
-rule_run <- function(rule, params) {
+#' @importFrom purrr walk map_chr
+#' @importFrom cli col_yellow cli_inform
+rules_run <- function(rules, params) {
 
-    print(params)
+    ## this function implements a topological sort to first get a linear
+    ## ordering of rule tree. Then they are all initialized. Even if the
+    ## rules' dependencies are not be run, the rules will still use their
+    ## data, so initializing them is important. Its also important to note
+    ## that initialization cannot be done one rule at a time since when a
+    ## rule is run, it will try to access its dependencies' data. So all
+    ## rules have to be initialized first before continuing.
 
+    rules_with_deps <- rule_sort(rules)
     ## if we don't ignore deps, then do topo sort and run,
     ## otherwise, just run the rule
-    rules <- if (params$ignore_deps) list(rule) else rule_sort(rule)
+    rules <- if (params$ignore_deps) rules else rules_with_deps
+
+    if (params$trace) {
+        exec_seq <- paste(map_chr(rules, rule_name), collapse = " ➜ ")
+        cli_inform(col_yellow("⬤──── Evaluating rules: {exec_seq}"))
+    }
 
     store <- params$store
     version <- params$version
 
-    walk(rules, initialize, params)
+    ## all rules have to be initialized before running because a rule
+    ## should be able to access the data of its dependencies.
+    walk(rules_with_deps, initialize, params)
 
     res <- NULL
 
     for (r in rules) {
+
+        dbg_h1(params$trace, "Begin rule {style_bold(rule_name(r))}")
+
         ## make sure that wd is reset even if error happens
         res <- with_dir(getwd(), rule_run_helper(r, params))
+
+        dbg_h1(params$trace, "End rule {style_bold(rule_name(r))}")
 
         ## is res is null, it means rule was not required to be executed
         if (is.null(res)) {
@@ -126,7 +192,7 @@ rule_run <- function(rule, params) {
         }
     }
 
-    walk(rules, deinitialize)
+    walk(rules_with_deps, deinitialize)
 
     if (!is.null(res$error)) {
         stop(res$error)
@@ -135,19 +201,12 @@ rule_run <- function(rule, params) {
     invisible(NULL)
 }
 
-#' @importFrom purrr detect
-rule_run_all <- function(rules, params, names) {
-
-    for (name in names) {
-
-        r <- detect(rules, function(r) rule_name(r) == name)
-
-        if (is.null(r)) {
-            stop(sprintf("invalid rule name '%s'", name))
-        } else {
-            rule_run(r, params)
-        }
-    }
-
-    invisible(NULL)
+#' TODO
+#'
+#' @param rule Rule.
+#' @param params Parameters.
+#'
+#' @export
+rule_run <- function(rule, params) {
+    rules_run(list(rule), params)
 }
